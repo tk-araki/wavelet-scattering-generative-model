@@ -84,6 +84,5 @@ class ImageScatDataset(Dataset):
         # scat_file = self.scat_files[idx]
         scat = np.load(self.scat_files[idx])
         scat = torch.from_numpy(scat).float()
-        # torch.from_numpy(scat).clone()　＃メモリを共有させない
 
         return image, scat
