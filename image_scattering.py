@@ -15,7 +15,7 @@ from datasets import ImageDataset
 
 # os.environ["KYMATIO_BACKEND_2D"] = "skcuda"
 
-def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # save_dirの変数が渡されれば保存とか save_scat
+def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # ToDo:scattering_imageに名称変更
 
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
@@ -24,7 +24,6 @@ def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # save_d
     '''
     動作確認用
         import matplotlib.pyplot as plt
-
         J = 4
         batch_size = 16
         image_dir = Path('/Users/araki/OutSide/OutSide_Python/Datasets/CelebA/64_rgb/image/train')
@@ -141,69 +140,3 @@ def ipca_large_scattering(scat_dir,J,image_len,ipcs_save_dir,ipca_save_file=None
         for i,f in enumerate(scat_files[batch]):
             save_file = ipcs_save_dir / f'{f.stem}_pcs.npy'
             np.save(save_file, scat_pcs[i])
-
-def main():
-    J = 4
-
-    # scattering = Scattering2D(J, (64, 64))
-
-    image_dir = Path('/Users/araki/OutSide/OutSide_Python/Datasets/CelebA/64_rgb/image/train') # argv　プッシュするときは
-    save_dir = Path(f'/Users/araki/OutSide/OutSide_Python/Datasets/CelebA/64_rgb/Scat_J{J}/raw/train')
-    batch_size = 16
-
-    scattering_imageset(J,64,batch_size, image_dir, save_dir)
-    '''
-    >!python image_scattering.py
-    100%|██████████| 4096/4096 [1:10:16<00:00,  1.03s/it]
-    CPU使用率２００％
-    '''
-
-
-if __name__ == '__main__':
-    # main()
-
-    '''
-    img = img_dataset[1]
-    
-    img_batch, base_batch = next(iter(img_dataloader))
-    img_batch.shape
-    plt.imshow((img_batch[1].permute(1, 2, 0)+1)/2) #----- 画像可視化
-    type(image_batch)
-    img_batch[0,:,:]
-    img_batch[1,:,:].max()
-    Out[18]: tensor(0.8118)
-    i=10;img_batch[i,:,:].min(),img_batch[i,:,:].max()
-    
-    image_files = [f for f in image_dir.iterdir() if f.suffix == '.jpg']
-    mm=Image.open(image_files[15])
-    forms = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(mean=0.5, std=0.5)
-    ])
-    forms(mm)
-    yy=np.array(mm)
-    '''
-
-    '''
-    img_batch = next(iter(img_dataloader))
-    img_width = img_height = 64
-    scattering = Scattering2D(J, (img_width, img_height),frontend = 'torch')
-    scattering_list = Scattering2D(J, (img_width, img_height),out_type='list',frontend = 'torch')
-    
-    img_scats = scattering(img_batch)
-    img_scats_list = scattering_list(img_batch)
-    
-    '''
-#######
-
-    '''
-    Scattering2Dトーチ版コード
-    /Users/araki/OutSide/OutSide_Python/lib/python3.9/site-packages/kymatio/scattering2d/frontend/torch_frontend.py
-    /Users/araki/OutSide/OutSide_Python/lib/python3.9/site-packages/kymatio/scattering2d/core/scattering2d.py
-    '''
-    # datasets.ImageFolderはラベル付き画像データセット用っぽい
-    # image_dataset = datasets.ImageFolder(image_dir, transforms.Compose([
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(mean = 127.5,std =127.5)
-    # ]))
-
