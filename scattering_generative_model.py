@@ -133,7 +133,7 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
               valid_scat_dir,valid_image_dir,
               save_dir=Path('model_checkpoints'),  # model_save_dir = ^^^
               log_dir=Path('logs_training'),
-              epochs_model_save=None, epochs_valid_log = 1,
+              model_save_interval=None, valid_log_interval = 1,
               pin_memory=True, num_workers=2,lr_adam = None):
         '''
         run_all.py
@@ -146,8 +146,8 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
         if not log_dir.exists():
             log_dir.mkdir(parents=True)
 
-        if epochs_model_save is None:
-            epochs_model_save = self.epoch + num_epochs
+        if model_save_interval is None:
+            model_save_interval = self.epoch + num_epochs
 
         if self.optimizer is not None and lr_adam is not None:
             print("'lr_adam' is not used since self.optimizer already exists")# Argument warnings.warn(
@@ -179,7 +179,7 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
                 end_time_train = time.perf_counter()
                 print(f"train_1_epoch {end_time_train-start_time_train:.3f}sec")
 
-            if not epoch % epochs_valid_log:
+            if not epoch % valid_log_interval:
                 # training error
                 start_time_eval = time.perf_counter()
                 train_loss=self.loss_recons_for_eval(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
@@ -198,10 +198,10 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
                 writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss},epoch)
 
             # モデル等を保存
-            if epoch != self.epoch and not epoch % epochs_model_save:
+            if epoch != self.epoch and not epoch % model_save_interval:
                 self.save_checkpoint(save_dir / f'model_at_{epoch}epoch.pth', epoch,batch_size,
                                      train_loss,valid_loss, save_optimizer=True) # historyなし^^^
-                # ベストValidation Score modelを保存    #-- epochs_model_save == 1, if min_valid_loss > valid_loss, self.save_checkpoin t()
+                # ベストValidation Score modelを保存    #-- model_save_interval == 1, if min_valid_loss > valid_loss, self.save_checkpoin t()
 
         writer_training.close()
         self.epoch += num_epochs
