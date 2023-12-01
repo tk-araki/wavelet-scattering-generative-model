@@ -177,7 +177,7 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
                 start_time_train = time.perf_counter()
                 self.__update_image_generator(train_imgscat_dataloader,l1_loss)
                 end_time_train = time.perf_counter()
-                print(f"train_1_epoch {end_time_train-start_time_train:.3f}sec")
+                print(f"Time for training at 1 epoch: {end_time_train-start_time_train:.3f}sec")
 
             if not epoch % valid_log_interval:
                 # training error
@@ -191,24 +191,20 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
                 end_time_eval = time.perf_counter()
                 print(f"validation error calc {end_time_eval - start_time_eval:.3f}sec")
 
-                # end_time = time.perf_counter()
-                # elapsed_time = end_time - start_time #　＜ー　いらなそう デバッグ用 Tensorboardで見れる,CSVに書き出せる
-                # print(f"time.time = {time.time()} just before writer_training.add_scalars")  # 日付に変換^^^
                 # log　追記
                 writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss},epoch)
 
-            # モデル等を保存
+            # model save
             if epoch != self.epoch and not epoch % model_save_interval:
                 self.save_checkpoint(save_dir / f'model_at_{epoch}epoch.pth', epoch,batch_size,
-                                     train_loss,valid_loss, save_optimizer=True) # historyなし^^^
-                # ベストValidation Score modelを保存    #-- model_save_interval == 1, if min_valid_loss > valid_loss, self.save_checkpoin t()
+                                     train_loss,valid_loss, save_optimizer=True)
 
         writer_training.close()
         self.epoch += num_epochs
 
 
     # レビュー対象　return 部分   名前generate_image_grid  grid of images
-    def generate_images(self,scat_batch,num_cols=8,save_file=None # save_fileの方が良さそう ^^^^^
+    def generate_images(self,scat_batch,num_cols=8,save_file=None
                         ):  # train_scat_dir=None,scat_batch=None ;; scat_coefs
         if self.image_generator.training:
             self.image_generator.eval()
@@ -222,6 +218,6 @@ class ScatteringGenerativeModel:# ScatteringGenerativeModel
         pil_images_grid = transforms.functional.to_pil_image(images_grid) # 入力tensorのスケールは[0,1]でないといけん
 
         if save_file:
-            pil_images_grid.save(save_file)# / f'generated_images_grid_{num_cols}rows.png')
+            pil_images_grid.save(save_file)
         else:
             return pil_images_grid

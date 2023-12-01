@@ -21,16 +21,7 @@ def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # ToDo:s
         save_dir.mkdir(parents=True)
 
     scattering = Scattering2D(J, (image_size, image_size))
-    '''
-    動作確認用
-        import matplotlib.pyplot as plt
-        J = 4
-        batch_size = 16
-        image_dir = Path('/Users/araki/OutSide/OutSide_Python/Datasets/CelebA/64_rgb/image/train')
-        # save_dir = Path('/Users/araki/OutSide/OutSide_Python/scattering-vae/scat_data/')
-        save_dir = Path(f'/Users/araki/OutSide/OutSide_Python/Datasets/CelebA/64_rgb/Scat_J{J}/raw/train')
-    '''
-    # https://pytorch.org/docs/stable/generated/torch.Tensor.to.html
+
     cur_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     scattering.to(cur_device)
@@ -38,20 +29,19 @@ def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # ToDo:s
     img_dataset = ImageDataset(image_dir)
     img_dataloader = DataLoader(img_dataset, batch_size, pin_memory=True, num_workers=2)
 
-    # for idx, (img_batch, base_batch) in enumerate(tqdm(img_dataloader)):
     for img_batch, base_batch in tqdm(img_dataloader):
 
         img_batch = img_batch.to(cur_device)
         img_scat_batch = scattering(img_batch).cpu().numpy()
 
-        # 保存
+        # save
         for i,base in enumerate(base_batch):
             save_file = save_dir / f'{base}_scat.npy'
             np.save(save_file, img_scat_batch[i]) # (3, 417, 4, 4) when J=4
 
 def load_scat_set(scat_dir):
     '''
-    load scattering coefficients into memoery
+    load scattering coefficients
     '''
 
     scat_files = list(scat_dir.glob('*_scat.npy'))
@@ -79,11 +69,11 @@ def pca_scattering(scat_dir,pcs_save_dir,pca_save_file=None,pca_load_file=None,n
         joblib.dump(pca, pca_save_file, compress=True) # 　PCAパラメータ（主成分ベクトル等）保存
 
     elif pca_load_file is not None:
-        pca = joblib.load(pca_load_file) #読み出し
+        pca = joblib.load(pca_load_file)
 
     scat_pcs = pca.transform(scat)
 
-    # 主成分スコア　保存
+    # save principal component scores
     for i,f in enumerate(scat_files):
         save_file = pcs_save_dir / f'{f.stem}_pcs.npy'
         np.save(save_file, scat_pcs[i])
@@ -107,7 +97,6 @@ def load_scats_to_memmap(scat_dir,J,image_len):
     # print(f"fp.name={fp.name}")
     return scats_mmap, scat_files
 
-# nfp = tempfile.NamedTemporaryFile() -> close()
 def ipca_large_scattering(scat_dir,J,image_len,ipcs_save_dir,ipca_save_file=None,ipca_load_file=None,
                           num_components=None,batch_size=None):
 
