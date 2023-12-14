@@ -9,14 +9,13 @@ from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 
 class ImageGenerator(nn.Module): # ImageConvolutionalGenerator
-    def __init__(self, # class Self():
-                       #    self.level_uppsampling =0
-                    # self = Self()
-                 scat_dim, # 入力ベクトルの次元 scat_dim =
-                 image_size, #  image_size = 64
-                 num_final_channels, #  num_final_channels = 32 # num_final_channels
-                 input_size=4):# size_input size_image image_size
-        # 512 --linear--> size_first_layer * size_first_layer * n_channels_input
+    def __init__(self,
+                 scat_dim, # dimension of input vector
+                 image_size, #  output image size
+                 num_image_channels=3, # the number of output image channels
+                 num_final_channels=32, # the number of final layer channels
+                 input_size=4): # input tensor size
+
         super(ImageGenerator, self).__init__()
 
         filter_size = 5
@@ -28,7 +27,7 @@ class ImageGenerator(nn.Module): # ImageConvolutionalGenerator
 
         self.input_tensor_size = [seq_channnels[0],input_size]
 
-        self.generator_input = nn.Linear(scat_dim, seq_channnels[0]*input_size*input_size,bias=False)
+        self.generator_input = nn.Linear(scat_dim, seq_channnels[0]*input_size*input_size,bias=True)
         self.input_operators = nn.Sequential(
             nn.BatchNorm2d(seq_channnels[0]), # eps=0.001, momentum=0.9),
             nn.ReLU()#inplace=True) # ^^^
@@ -50,10 +49,10 @@ class ImageGenerator(nn.Module): # ImageConvolutionalGenerator
 
         # final
         self.final_layer = nn.Sequential(
-            nn.Conv2d(seq_channnels[self.level_uppsampling], 3, # カラー画像限定
+            nn.Conv2d(seq_channnels[self.level_uppsampling], num_image_channels,
                       filter_size, bias=False,
                       padding=padding, padding_mode='reflect'),
-            nn.BatchNorm2d(3),
+            nn.BatchNorm2d(num_image_channels),
             nn.Tanh()
         )
 
