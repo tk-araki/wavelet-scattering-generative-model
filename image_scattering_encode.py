@@ -10,12 +10,11 @@ from kymatio.torch import Scattering2D
 from sklearn.decomposition import PCA,IncrementalPCA
 from sklearn.utils import gen_batches
 
-
 from datasets import ImageDataset
 
 # os.environ["KYMATIO_BACKEND_2D"] = "skcuda"
 
-def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # ToDo:scattering_imageに名称変更
+def scattering_imageset(J,image_size, batch_size, image_dir, save_dir): # ToDo:scattering_imagesに名称変更
 
     if not save_dir.exists():
         save_dir.mkdir(parents=True)
