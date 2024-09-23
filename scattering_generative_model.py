@@ -1,17 +1,13 @@
-import time
-import json
 import warnings
 from types import MappingProxyType
 
 from tqdm import trange
 from pathlib import Path
-
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import torchvision
 import torchvision.transforms as transforms
-from torch.utils.tensorboard import SummaryWriter
 
 from datasets import ImageScatDataset
 from generator import ImageGenerator
@@ -65,14 +61,14 @@ class ScatteringGenerativeModel:
 
             self.optimizer.zero_grad()
             recons_batch = self.image_generator(scat_batch)
-            loss_recons = loss(image_batch, recons_batch)
-            loss_recons.backward()
+            recons_loss = loss(image_batch, recons_batch)
+            recons_loss.backward()
 
             self.optimizer.step()
 
         # return train_loss
 
-    def loss_recons_for_eval(self, dataloader_eval, loss, num_data):
+    def recons_loss(self, dataloader_eval, loss, num_data):
         if self.image_generator.training:
             self.image_generator.eval()
         mean_loss = 0.0
@@ -82,8 +78,8 @@ class ScatteringGenerativeModel:
                 scat_batch = scat_batch.to(self.cur_device)
 
                 recons_batch = self.image_generator(scat_batch)
-                loss_recons = loss(image_batch, recons_batch)
-                mean_loss += loss_recons.item() * scat_batch.shape[0]
+                recons_loss = loss(image_batch, recons_batch)
+                mean_loss += recons_loss.item() * scat_batch.shape[0]
 
         return mean_loss / num_data
 
@@ -102,23 +98,29 @@ class ScatteringGenerativeModel:
     def train(self, num_epochs, batch_size, train_scat_dir, train_image_dir,
               valid_scat_dir, valid_image_dir,
               model_save_dir=Path('model_checkpoints'),
-              log_dir=Path('logs_training'),
+              logger = None, #"mlflow",
+              # log_dir=Path('logs_training'),
               log_interval=5,
+              train_shuffle=None,
               pin_memory=True, num_workers=2, lr_adam=None):
 
         if not model_save_dir.exists():
             model_save_dir.mkdir(parents=True)
 
-        if not log_dir.exists():
-            log_dir.mkdir(parents=True)
+        # if not log_dir.exists():
+        #     log_dir.mkdir(parents=True)
 
         if self.optimizer is not None and lr_adam is not None:
             print("'lr_adam' is not used since self.optimizer already exists")  # Argument warnings.warn(
 
+        if logger is None:
+            raise ValueError("'logger' must be specified.")
+        #     warnings("'logger' ")
+
         # dataloader for training
         train_imgscat_dataset = ImageScatDataset(train_image_dir, train_scat_dir,
                                                  scat_suffix='_scat_pcs.npy')  # scat_suffix モジュールファイルのグローバル変数にする？
-        train_imgscat_dataloader = DataLoader(train_imgscat_dataset, batch_size, pin_memory=pin_memory,
+        train_imgscat_dataloader = DataLoader(train_imgscat_dataset, batch_size,shuffle=train_shuffle, pin_memory=pin_memory,
                                               num_workers=num_workers)
 
         # dataloader for validation
@@ -134,12 +136,17 @@ class ScatteringGenerativeModel:
                 lr_adam = 1e-3
             self.optimizer = optim.Adam(self.image_generator.parameters(), lr=lr_adam)
 
-        writer_training = SummaryWriter(log_dir)
+        # if logger == "mlflow":
+        #     ^^^
+        # elif logger == "tensorboard":
+            # writer_training = SummaryWriter(log_dir)
+        logger.setup()
 
         # initial loss
-        train_loss = self.loss_recons_for_eval(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
-        valid_loss = self.loss_recons_for_eval(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
-        writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss}, self.epoch)
+        train_loss = self.recons_loss(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
+        valid_loss = self.recons_loss(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
+        logger.log_losses(train_loss,valid_loss,self.epoch)
+        # ^^^writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss}, self.epoch)
 
         for epoch in trange(self.epoch + 1,self.epoch + num_epochs+1):
 
@@ -148,15 +155,22 @@ class ScatteringGenerativeModel:
 
             if not epoch % log_interval:
                 # log training and validation losses
-                train_loss = self.loss_recons_for_eval(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
-                valid_loss = self.loss_recons_for_eval(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
-                writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss}, epoch)
+                train_loss = self.recons_loss(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
+                valid_loss = self.recons_loss(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
+                logger.log_losses(train_loss, valid_loss, epoch)
+                # 関数化
+                # if logger == "mlflow":
+                #     mlflow.log_metric("train loss", train_loss, step=epoch)
+                #     mlflow.log_metric("valid loss", valid_loss, step=epoch)
+                # elif logger == "tensorboard":
+                #     writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss},epoch)
 
                 # model save
                 self.save_checkpoint(model_save_dir / f'model_at_{epoch}epoch.pth', epoch, batch_size,
                                      train_loss, valid_loss, save_optimizer=True)
 
-        writer_training.close()
+        logger.close()
+        #writer_training.close()
         self.epoch += num_epochs
 
     # generate_image_grid
