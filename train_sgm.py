@@ -1,6 +1,7 @@
 import argparse
 
 from utils import load_config, fix_torch_seed
+from loggers import MlflowTrainingLogger, TensorboardTrainingLogger
 from image_scattering_encode import encode_images
 from scattering_generative_model import ScatteringGenerativeModel
 
@@ -31,8 +32,13 @@ def main(args):
                     ipca_batch_size = config['pca']['batch_size'])
 
     ## Train Generator
+    if args.fix_seed:
+        fix_torch_seed(args.seed)
 
-    fix_torch_seed(0)
+    train_logger = MlflowTrainingLogger(config['logger']['log_dir'],
+                                        config['logger']['common_run_name'],
+                                        config['logger']['common_run_name']) if args.logger == 'mlflow' else \
+        TensorboardTrainingLogger(config['logger']['log_dir'])
 
     sgmodel = ScatteringGenerativeModel(model_def_params={'scat_dim': config['pca']['pcs_dim'],
                                                           'image_size': config['image']['size'],
@@ -46,8 +52,8 @@ def main(args):
                   config['pca']['train_pcs_dir'],config['image']['train_dir'],
                   config['pca']['valid_pcs_dir'],config['image']['valid_dir'], #path_set['colab_valid_image_dir'],
                   config['generator']['checkpoint_dir'],
-                  config['generator']['log_dir'],
-                  config['generator']['log_interval'],
+                  train_logger,
+                  config['generator']['log_interval'],config['generator']['shuffle'],
                    lr_adam=config['generator']['lr'],num_workers=config['generator']['num_workers']) # pin_memory=True
 
 
@@ -58,7 +64,10 @@ if __name__ == "__main__":
                         metavar='FILE',
                         help="Path of the configuration file")
 
+    parser.add_argument('--logger',choices=['mlflow','tensorboard'], default='mlflow')
     parser.add_argument('--disable_encode',dest="encode_enabled", action='store_false')
+    parser.add_argument('--fix_seed', action='store_true')
+    parser.add_argument('--seed',type=int, default=314)
 
     args = parser.parse_args()
     main(args)
