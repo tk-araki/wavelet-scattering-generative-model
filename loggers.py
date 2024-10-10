@@ -19,7 +19,7 @@ class TrainingLogger(metaclass=ABCMeta):
         pass
 
 
-class MlflowTrainingLogger(TrainingLogger):
+class MlflowSGMTrainLogger(TrainingLogger): # MlflowSGMTrainLogger MlflowStochasticSGMTrainLogger
     def __init__(self, log_dir, experiment_name, run_name):
         self.log_dir = log_dir
         self.experiment_name = experiment_name
@@ -38,6 +38,15 @@ class MlflowTrainingLogger(TrainingLogger):
     def close(self):
         mlflow.end_run()
 
+
+class MlflowSSGMTrainLogger(MlflowSGMTrainLogger):
+
+    def setup(self, comp_stds=None):
+        super().setup()
+
+        if comp_stds is not None:
+            for i, std in enumerate(comp_stds):
+                mlflow.log_metric("comp_stds", std, step=i + 1) # std.item()
 
 class TensorboardTrainingLogger(TrainingLogger):
     def __init__(self, log_dir):
