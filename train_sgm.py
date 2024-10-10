@@ -1,7 +1,7 @@
 import argparse
 
 from utils import load_config, fix_torch_seed
-from loggers import MlflowTrainingLogger, TensorboardTrainingLogger
+from loggers import MlflowSGMTrainLogger, TensorboardTrainingLogger
 from image_scattering_encode import encode_images
 from scattering_generative_model import ScatteringGenerativeModel
 
@@ -35,9 +35,9 @@ def main(args):
     if args.fix_seed:
         fix_torch_seed(args.seed)
 
-    train_logger = MlflowTrainingLogger(config['logger']['log_dir'],
-                                        config['logger']['common_run_name'],
-                                        config['logger']['common_run_name']) if args.logger == 'mlflow' else \
+    train_logger = MlflowSGMTrainLogger(config['logger']['log_dir'],
+                                        config['logger']['experiment_name'],
+                                        config['logger']['common_run_name'] + '_train') if args.logger == 'mlflow' else \
         TensorboardTrainingLogger(config['logger']['log_dir'])
 
     sgmodel = ScatteringGenerativeModel(model_def_params={'scat_dim': config['pca']['pcs_dim'],
@@ -53,7 +53,8 @@ def main(args):
                   config['pca']['valid_pcs_dir'],config['image']['valid_dir'], #path_set['colab_valid_image_dir'],
                   config['generator']['checkpoint_dir'],
                   train_logger,
-                  config['generator']['log_interval'],config['generator']['shuffle'],
+
+                  config['logger']['train_log_interval'],config['generator']['shuffle'],
                    lr_adam=config['generator']['lr'],num_workers=config['generator']['num_workers']) # pin_memory=True
 
 
