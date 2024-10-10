@@ -11,12 +11,7 @@ image_transforms = transforms.Compose([
 
 class ImageDataset(Dataset):
 
-    def __init__(self,
-                 image_dir
-                 # transform
-                 # extension
-                 ):
-
+    def __init__(self, image_dir):
         self.image_files = list(image_dir.glob('*.jpg'))
 
     def __len__(self):

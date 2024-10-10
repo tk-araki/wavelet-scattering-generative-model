@@ -133,18 +133,17 @@ def ipca_large_scattering(scat_dir,J,image_len,ipcs_save_dir,ipca_save_file=None
 def encode_images(image_size,image_dir,J,scat_batch_size,scat_dir, pca_algorithm, scatpcs_dir, #
            obj_save_file=None,obj_load_file=None,pcs_dim=None,ipca_batch_size = None):
 
-    # print("scattering images")
+    print("Image Scattering") #"scattering images"
     scattering_imageset(J, image_size, scat_batch_size, image_dir, scat_dir)# scattering_images
-    # print("Done")
 
     if pca_algorithm == 'pca':
-        # print("PCA of the scattering coefficients")
+        print("PCA of the scattering coefficients")
         pca_scattering(scat_dir, scatpcs_dir,
                        pca_save_file=obj_save_file,
                        pca_load_file=obj_load_file,
                        num_components=pcs_dim)  # pca_save_file.parent.exists()
     elif pca_algorithm == 'ipca':
-        # print("Incremental PCA of the scattering coefficients")
+        print("Incremental PCA of the scattering coefficients")
         ipca_large_scattering(scat_dir, J,
                               image_len=3 * image_size**2,
                               ipcs_save_dir=scatpcs_dir,
@@ -154,4 +153,4 @@ def encode_images(image_size,image_dir,J,scat_batch_size,scat_dir, pca_algorithm
     else:
         raise ValueError("Undefined pca algorithm at 'pca: algorithm:' in config file.")
 
-    # print("Done")
+    print("Done")

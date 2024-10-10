@@ -98,8 +98,8 @@ class ScatteringGenerativeModel:
     def train(self, num_epochs, batch_size, train_scat_dir, train_image_dir,
               valid_scat_dir, valid_image_dir,
               model_save_dir=Path('model_checkpoints'),
-              logger = None, #"mlflow",
               # log_dir=Path('logs_training'),
+              logger=None,
               log_interval=5,
               train_shuffle=None,
               pin_memory=True, num_workers=2, lr_adam=None):
@@ -142,11 +142,11 @@ class ScatteringGenerativeModel:
             # writer_training = SummaryWriter(log_dir)
         logger.setup()
 
+        print("Generator training")
         # initial loss
         train_loss = self.recons_loss(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
         valid_loss = self.recons_loss(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
         logger.log_losses(train_loss,valid_loss,self.epoch)
-        # ^^^writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss}, self.epoch)
 
         for epoch in trange(self.epoch + 1,self.epoch + num_epochs+1):
 
@@ -158,12 +158,6 @@ class ScatteringGenerativeModel:
                 train_loss = self.recons_loss(train_imgscat_dataloader, l1_loss, len(train_imgscat_dataset))
                 valid_loss = self.recons_loss(valid_imgscat_dataloader, l1_loss, len(valid_imgscat_dataset))
                 logger.log_losses(train_loss, valid_loss, epoch)
-                # 関数化
-                # if logger == "mlflow":
-                #     mlflow.log_metric("train loss", train_loss, step=epoch)
-                #     mlflow.log_metric("valid loss", valid_loss, step=epoch)
-                # elif logger == "tensorboard":
-                #     writer_training.add_scalars('Loss', {'train_loss': train_loss, 'valid_loss': valid_loss},epoch)
 
                 # model save
                 self.save_checkpoint(model_save_dir / f'model_at_{epoch}epoch.pth', epoch, batch_size,
