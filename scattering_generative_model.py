@@ -32,7 +32,7 @@ class ScatteringGenerativeModel:
             self.epoch = 0
 
         if model_file is not None:
-            checkpoint = torch.load(model_file)  # torch.load(model_file,map_location=torch.device('cpu'))
+            checkpoint = torch.load(model_file)
             self.epoch = checkpoint['epoch']
             self.model_def_params = MappingProxyType(checkpoint['model_def_params'])
             self.image_generator = ImageGenerator(**self.model_def_params)
@@ -50,7 +50,7 @@ class ScatteringGenerativeModel:
 
         self.image_generator.to(self.cur_device)
 
-    def __update_image_generator(self, dataloader_train, loss):  # __update_generator_params
+    def _update_image_generator(self, dataloader_train, loss):
         if not self.image_generator.training:
             self.image_generator.train()
 
@@ -151,7 +151,7 @@ class ScatteringGenerativeModel:
         for epoch in trange(self.epoch + 1,self.epoch + num_epochs+1):
 
             # train
-            self.__update_image_generator(train_imgscat_dataloader, l1_loss)
+            self._update_image_generator(train_imgscat_dataloader, l1_loss)
 
             if not epoch % log_interval:
                 # log training and validation losses
