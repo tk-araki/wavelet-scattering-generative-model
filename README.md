@@ -15,8 +15,8 @@ Wavelet Scatteringを用いた深層生成モデルは、VAEのようにエン�
 
 # 使用法
 画像データを学習用、ヴァリデーション用、テスト用等に分けて別々のフォルダに設置します（画像は正方形を想定しています）。
-configファイルにデータを格納したフォルダのパスや画像サイズなど各種設定項目を記入します。
-Configの作成時は、Configの例```config_example.yml```をご参照ください。
+Configファイルにデータを格納したフォルダのパスや画像サイズなど各種設定項目を記入します。
+Configファイルは、例```config_example.yml```を参考にして作成してください。
 コメントに各設定項目の説明を記載しています。
 ## 学習
 以下のコマンドで既存モデルまたは改良モデルを学習できます。
@@ -24,19 +24,30 @@ Configの作成時は、Configの例```config_example.yml```をご参照くだ�
 python <tain_sgm.py or tain_ssgm.py> <config file path>
 ```
 既存モデルの学習には```tain_sgm.py```、改良モデルの学習には```tain_ssgm.py```を使用します。
-オプション引数を設定することで、実験管理ツールのmlflowとTensorboardどちらを使うか、エンコードをスキップするか、SEEDを固定するか、を選択できます。
+オプション引数を設定することで、実験管理ツールのMlflowとTensorboardどちらを使うか、エンコードをスキップするか、SEEDを固定するか、を選択できます。
 
 例：
+既存モデルを学習する場合
 ```shell
 python tain_sgm.py ./configs/config_celeba_sgm.yml
 ```
 
-指定した実験管理ツール（mlflowまたはTensorboard）を使用して、学習時の訓練データにおけるロスと
-ヴァリデーションデータにおけるロスの履歴を見ることができます。
+以下のコマンドで、指定した実験管理ツール（MlflowまたはTensorboard）を起動して、学習時の訓練データにおけるロスと
+ヴァリデーションデータにおけるロスの履歴を確認できます。
 
+Mlflow UIの起動
+```shell
+mlflow ui --backend-store-uri <log directory path>
+```
+
+Tensorboardの起動
+```shell
+tensorboard --logdir <log directory path>
+```
+```<log directory path>```はConfigファイルに設定したパスを指定してください。
 ## 推論
 テストデータと復元用データをConfigファイルで指定したフォルダに格納します。
-以下のコマンドで既存モデルまたは改良モデルの推論（画像生成、画像復元）を実行できます。
+以下のコマンドで、学習した既存モデルまたは改良モデルを使って画像生成、画像復元、テストロスの算出を実行できます（画像生成には標準正規乱数を使用）。
 ```shell
 python infer.py <"sgm" or "ssgm"> <config file path> <epoch>
 ```
@@ -44,10 +55,12 @@ python infer.py <"sgm" or "ssgm"> <config file path> <epoch>
 第三引数```<epoch>```で指定したエポック時の学習モデルで推論します。
 
 例：
-100エポックまで学習した改良モデルで推論する場合、
+100エポックまで学習した改良モデルで推論する場合
 ```shell
  python infer.py "ssgm" ./configs/config_celeba_ssgm.yml 100
 ```
+
+推論結果は、上記の学習時のロスの確認と同様にMlflow UIを起動して確認できます。
 
 # 動作確認時のバージョン
 Pythonと主なパッケージの動作確認時のバージョンは以下の通りです。
@@ -64,31 +77,7 @@ Packages
 - mlflow                    2.11.3
 ```
 
-<!--
-# 補足
-Wavelet Scatteringを用いた深層生成モデルの論文の著者がこのモデルのコードをGitHubに公開しているのですが([こちら](https://github.com/tomas-angles/generative-scattering-networks))、
-「Scattering係数にPCAを適用するコードがない」、
-「学習等に使う画像のファイル名前が「0」から「画像ファイル数-1」までの番号でなければならない（例えば、"0.jpg","1.jpg"）」、
-「コードを直接書き換えないとモデルのデコーダーのネットワークアーキテクチャを調整できない」
-等の欠点があります。// 等が理由で使いやすい形になっていない
-// さらに、Generatorの第一層の全結合層にバイアス項がないため、潜在変数ベクトルが０ベクトルに近いときほぼ単色の画像が出力されてしまうという問題があります。 
-
-一方、このレポジトリでは、PCAのコードに加え、データ数が多くメモリ不足でPCAが実行できない場合に対応するため、
-Incremental PCAを適用するコードも実装しています。
-画像ファイル名に制約はありません。
-デコーダーのネットワークアーキテクチャを設定パラメータで調整できます。
-学習したモデルのパラメータと学習に用いたOptimizerのパラメータをまとめて保存できるようになっており、保存した学習済みモデルを続きから学習できるコードになっています。
-これにより、学習が途中で中断した場合でも、保存したところから残りの分を学習できます。
-Tensorboardでログを見ることもできます。
-
-https://github.com/meetps/pytorch-semseg　参考
-。[Angles & Mallat (2018)](#references)で提案された深層生成モデル
-generative Scattering networks
--->
 # References
 - Angles & Mallat (2018) [generative networks as inverse problems with scattering transforms](https://arxiv.org/pdf/1805.06621.pdf), ICLR.
    ([著者のコード](https://github.com/tomas-angles/generative-scattering-networks))
 - [Wavelet Scatteringを用いた深層生成モデルとその実験結果の解説](https://zenn.dev/tkmtark/articles/c4009e0a5030dc)
-
-
-
