@@ -114,7 +114,7 @@ def main(args):
         # generate images from Gaussian noises
         config['infer']['generated_image_dir'].mkdir(parents=True, exist_ok=True)
 
-        torch.manual_seed(0)
+        torch.manual_seed(seed=0)
         n_images = 128
         generated_image_file = config['infer']['generated_image_dir'] / \
                                f"{model_epoch}epoch_{config_file.stem.replace('config_', '')}_n_images{n_images}.png" # [len("config_"):]
